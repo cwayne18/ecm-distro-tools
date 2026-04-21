@@ -22,27 +22,11 @@ const (
 // Define the cutoff time: 2 days ago
 var cutoff = time.Now().Add(-time.Hour * 24 * 2)
 
-// canonicalTagRE matches the base semver portion of a tag, optionally including
-// a single "-k3sN" suffix, and ignores any trailing build metadata (e.g. -build20260415).
-var canonicalTagRE = regexp.MustCompile(`^(v\d+\.\d+\.\d+(?:-k3s\d+)?)`)
+// buildSuffixRE matches the trailing "-buildYYYYMMDD" suffix appended by this tool.
+var buildSuffixRE = regexp.MustCompile(`-build\d+$`)
 
-// k3sPrereleaseRE matches the prerelease strings that are allowed: -k3sN (e.g. k3s1, k3s2).
+// k3sPrereleaseRE matches the only allowed prerelease string: -k3sN (e.g. k3s1, k3s2).
 var k3sPrereleaseRE = regexp.MustCompile(`^k3s\d+$`)
-
-// canonicalTag returns the canonical tag name, preserving the "-k3sN" suffix when
-// present while stripping all other suffixes (e.g. "-build20260415").
-// Examples:
-//
-//	"v3.6.7"                    -> "v3.6.7"
-//	"v3.6.7-build20260415"      -> "v3.6.7"
-//	"v3.6.7-k3s1"               -> "v3.6.7-k3s1"
-//	"v3.6.7-k3s1-build20260415" -> "v3.6.7-k3s1"
-func canonicalTag(name string) string {
-	if m := canonicalTagRE.FindString(name); m != "" {
-		return m
-	}
-	return name
-}
 
 // Sync checks the releases of upstream repository (owner, repo)
 // with the given repo, and creates the missing latest tags from upstream.
@@ -82,10 +66,10 @@ func Sync(ctx context.Context, client *github.Client, owner, repo, upstreamOwner
 
 	tagsMap := make(map[string]struct{}, len(tags))
 	for _, tag := range tags {
-		// normalise each existing tag to its canonical form so that
-		// "v3.6.7-k3s1-build20260415" maps to "v3.6.7-k3s1" and
-		// "v3.6.7-build20260415" maps to "v3.6.7".
-		tagsMap[canonicalTag(tag.GetName())] = struct{}{}
+		// Strip the trailing "-buildYYYYMMDD" suffix this tool appends so that
+		// "v3.6.7-build20260415" maps to "v3.6.7" and
+		// "v3.6.7-k3s1-build20260415" maps to "v3.6.7-k3s1".
+		tagsMap[buildSuffixRE.ReplaceAllString(tag.GetName(), "")] = struct{}{}
 	}
 
 	for _, upstreamTag := range upstreamTags {

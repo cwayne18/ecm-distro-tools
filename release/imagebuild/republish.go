@@ -21,8 +21,9 @@ func Republish(ctx context.Context, client *github.Client, owner, repo, targetCo
 		return fmt.Errorf("failed to retrieve latest release, client call returned nil for '%s/%s'", owner, repo)
 	}
 
-	// removes the build suffix (e.g. -buildYYYYMMDD) while preserving "-k3sN" suffixes.
-	tag := canonicalTag(release.GetTagName())
+	// Strip the trailing "-buildYYYYMMDD" suffix (e.g. -build20260415) so we can
+	// append today's build date. A "-k3sN" prerelease suffix is preserved.
+	tag := buildSuffixRE.ReplaceAllString(release.GetTagName(), "")
 
 	now := time.Now()
 	tag += fmt.Sprintf("-build%d%02d%02d", now.Year(), now.Month(), now.Day())
