@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -20,6 +21,28 @@ const (
 
 // Define the cutoff time: 2 days ago
 var cutoff = time.Now().Add(-time.Hour * 24 * 2)
+
+// canonicalTagRE matches the base semver portion of a tag, optionally including
+// a single "-k3sN" suffix, and ignores any trailing build metadata (e.g. -build20260415).
+var canonicalTagRE = regexp.MustCompile(`^(v\d+\.\d+\.\d+(?:-k3s\d+)?)`)
+
+// k3sPrereleaseRE matches the prerelease strings that are allowed: -k3sN (e.g. k3s1, k3s2).
+var k3sPrereleaseRE = regexp.MustCompile(`^k3s\d+$`)
+
+// canonicalTag returns the canonical tag name, preserving the "-k3sN" suffix when
+// present while stripping all other suffixes (e.g. "-build20260415").
+// Examples:
+//
+//	"v3.6.7"                    -> "v3.6.7"
+//	"v3.6.7-build20260415"      -> "v3.6.7"
+//	"v3.6.7-k3s1"               -> "v3.6.7-k3s1"
+//	"v3.6.7-k3s1-build20260415" -> "v3.6.7-k3s1"
+func canonicalTag(name string) string {
+	if m := canonicalTagRE.FindString(name); m != "" {
+		return m
+	}
+	return name
+}
 
 // Sync checks the releases of upstream repository (owner, repo)
 // with the given repo, and creates the missing latest tags from upstream.
@@ -59,10 +82,10 @@ func Sync(ctx context.Context, client *github.Client, owner, repo, upstreamOwner
 
 	tagsMap := make(map[string]struct{}, len(tags))
 	for _, tag := range tags {
-		// removes any suffixes (e.g. -buildYYYYMMDD) to build a map to check
-		// the existence of tags in image-build repo
-		tag, _, _ := strings.Cut(tag.GetName(), "-")
-		tagsMap[tag] = struct{}{}
+		// normalise each existing tag to its canonical form so that
+		// "v3.6.7-k3s1-build20260415" maps to "v3.6.7-k3s1" and
+		// "v3.6.7-build20260415" maps to "v3.6.7".
+		tagsMap[canonicalTag(tag.GetName())] = struct{}{}
 	}
 
 	for _, upstreamTag := range upstreamTags {
@@ -200,13 +223,15 @@ func validateTagFormat(tagName, tagPrefix string) bool {
 		return false
 	}
 
-	// this checks for any suffix that a tag may have, and we ignore those with suffixes:
+	// this checks for any suffix that a tag may have; we allow "-k3sN" prerelease
+	// strings but reject any other prerelease suffix:
 	// example:
-	// - v3.21.1 <------------ correct
-	// - v3.21.1-typha <------ will be skipped
+	// - v3.21.1          <------------ correct
+	// - v3.6.7-k3s1      <------------ correct
+	// - v3.21.1-typha    <------ will be skipped
 	// - v3.21.1-pod2daemon <- will be skipped
-	// - v3.24.2-0.dev <------ will be skipped
-	if v.Prerelease() != "" {
+	// - v3.24.2-0.dev    <------ will be skipped
+	if pre := v.Prerelease(); pre != "" && !k3sPrereleaseRE.MatchString(pre) {
 		return false
 	}
 

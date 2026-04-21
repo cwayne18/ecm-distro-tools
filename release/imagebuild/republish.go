@@ -3,7 +3,6 @@ package imagebuild
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/go-github/v84/github"
@@ -22,8 +21,8 @@ func Republish(ctx context.Context, client *github.Client, owner, repo, targetCo
 		return fmt.Errorf("failed to retrieve latest release, client call returned nil for '%s/%s'", owner, repo)
 	}
 
-	// removes the build suffix ( -buildYYYYMMDD )
-	tag, _, _ := strings.Cut(release.GetTagName(), "-")
+	// removes the build suffix (e.g. -buildYYYYMMDD) while preserving "-k3sN" suffixes.
+	tag := canonicalTag(release.GetTagName())
 
 	now := time.Now()
 	tag += fmt.Sprintf("-build%d%02d%02d", now.Year(), now.Month(), now.Day())
