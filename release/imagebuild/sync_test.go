@@ -4,31 +4,6 @@ import (
 	"testing"
 )
 
-func TestStripBuildSuffix(t *testing.T) {
-	tests := []struct {
-		input string
-		want  string
-	}{
-		// no build suffix — unchanged
-		{"v3.6.7", "v3.6.7"},
-		{"v3.6.7-k3s1", "v3.6.7-k3s1"},
-		// build suffix stripped, k3s preserved
-		{"v3.6.7-build20260415", "v3.6.7"},
-		{"v3.6.7-k3s1-build20260415", "v3.6.7-k3s1"},
-		{"v3.6.7-k3s2-build20260415", "v3.6.7-k3s2"},
-		{"v1.32.3-k3s1-build20260101", "v1.32.3-k3s1"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			got := buildSuffixRE.ReplaceAllString(tt.input, "")
-			if got != tt.want {
-				t.Errorf("stripBuildSuffix(%q) = %q, want %q", tt.input, got, tt.want)
-			}
-		})
-	}
-}
-
 func TestValidateTagFormat(t *testing.T) {
 	tests := []struct {
 		tagName   string

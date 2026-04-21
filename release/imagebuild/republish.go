@@ -3,6 +3,7 @@ package imagebuild
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/go-github/v84/github"
@@ -21,9 +22,10 @@ func Republish(ctx context.Context, client *github.Client, owner, repo, targetCo
 		return fmt.Errorf("failed to retrieve latest release, client call returned nil for '%s/%s'", owner, repo)
 	}
 
-	// Strip the trailing "-buildYYYYMMDD" suffix (e.g. -build20260415) so we can
-	// append today's build date. A "-k3sN" prerelease suffix is preserved.
-	tag := buildSuffixRE.ReplaceAllString(release.GetTagName(), "")
+	// Remove the build suffix (e.g. -buildYYYYMMDD) while preserving any
+	// "-k3sN" prerelease suffix. strings.Cut at "-build" leaves everything
+	// before the suffix intact: "v3.6.7-k3s1-build20260415" → "v3.6.7-k3s1".
+	tag, _, _ := strings.Cut(release.GetTagName(), "-build")
 
 	now := time.Now()
 	tag += fmt.Sprintf("-build%d%02d%02d", now.Year(), now.Month(), now.Day())

@@ -66,10 +66,14 @@ func Sync(ctx context.Context, client *github.Client, owner, repo, upstreamOwner
 
 	tagsMap := make(map[string]struct{}, len(tags))
 	for _, tag := range tags {
-		// Strip the trailing "-buildYYYYMMDD" suffix this tool appends so that
-		// "v3.6.7-build20260415" maps to "v3.6.7" and
-		// "v3.6.7-k3s1-build20260415" maps to "v3.6.7-k3s1".
-		tagsMap[buildSuffixRE.ReplaceAllString(tag.GetName(), "")] = struct{}{}
+		name := tag.GetName()
+		// ignore build-date tags (e.g. v3.6.7-build20260415) — they are
+		// not canonical tag names and are treated as invalid, just as
+		// validateTagFormat does for upstream tags.
+		if buildSuffixRE.MatchString(name) {
+			continue
+		}
+		tagsMap[name] = struct{}{}
 	}
 
 	for _, upstreamTag := range upstreamTags {
