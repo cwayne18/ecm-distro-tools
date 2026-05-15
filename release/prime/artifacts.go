@@ -275,44 +275,215 @@ const artifactsIndexTemplate = `{{ define "release-artifacts-index" }}
 		<meta http-equiv="X-UA-Compatible" content="ie=edge">
 		<title>Rancher Prime Artifacts</title>
 		<link rel="icon" type="image/png" href="https://prime.ribs.rancher.io/assets/img/favicon.png">
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
 		<style>
-			body { font-family: 'Courier New', monospace, Verdana, Geneneva; }
-			header { display: flex; flex-direction: row; justify-items: center; }
-			#rancher-logo { width: 200px; }
-			.project { margin-left: 20px; }
-			.release { margin-left: 40px; margin-bottom: 20px; }
-			.release h3 { margin-bottom: 0px; }
-			.files { margin-left: 60px; display: flex; flex-direction: column; }
-			.flex-row { display: flex; flex-direction: row; align-items: center; }
-			.project-title { margin-right: 20px; }
-			.release-title-tag { margin-right: 20px; min-width: 70px; }
-			.release-title-expand { background-color: #2453ff; color: white; border-radius: 5px; border: none; max-height: 20px; }
-			.release-title-expand:hover, .expand-active{ background-color: white; color: #2453ff; border: 1px solid #2453ff; }
-			.hidden { display: none; overflow: hidden; }
-			.anchor { opacity:0; margin-right:8px; text-decoration:none; color:dimgray; }
-			.flex-row:hover .anchor, h2:hover .anchor, .anchor:focus { opacity:1; }
+			:root {
+				--primary:       #2F68DF;
+				--primary-hover: #1F58CF;
+				--primary-text:  #FFFFFF;
+				--body-bg:       #FFFFFF;
+				--body-text:     #141419;
+				--muted:         #6C6C76;
+				--border:        #DCDEE7;
+				--box-bg:        #F4F5FA;
+				--link:          #3458A8;
+				--header-height: 55px;
+				--border-radius: 4px;
+				--max-width:     1440px;
+			}
+
+			*, *::before, *::after { box-sizing: border-box; }
+
+			body {
+				margin: 0;
+				font-family: 'Lato', Arial, Helvetica, sans-serif;
+				font-size: 14px;
+				line-height: 1.6;
+				background-color: var(--body-bg);
+				color: var(--body-text);
+			}
+
+			a {
+				color: var(--link);
+				text-decoration: none;
+			}
+
+			a:hover { text-decoration: underline; }
+
+			header {
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+				height: var(--header-height);
+				padding: 0 24px;
+				background-color: var(--body-bg);
+				border-bottom: 1px solid var(--border);
+				gap: 16px;
+			}
+
+			#rancher-logo { width: 180px; }
+
+			header h1 {
+				margin: 0;
+				font-family: 'Poppins', sans-serif;
+				font-size: 18px;
+				font-weight: 500;
+				color: var(--body-text);
+				letter-spacing: 0.02em;
+			}
+
+			main {
+				max-width: var(--max-width);
+				margin: 0 auto;
+				padding: 24px;
+			}
+
+			.project {
+				margin-bottom: 32px;
+				border: 1px solid var(--border);
+				border-radius: var(--border-radius);
+				overflow: hidden;
+			}
+
+			.project-header {
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+				gap: 12px;
+				padding: 12px 16px;
+				background-color: var(--box-bg);
+				border-bottom: 1px solid var(--border);
+			}
+
+			.project-header h2 {
+				margin: 0;
+				font-family: 'Poppins', sans-serif;
+				font-size: 16px;
+				font-weight: 500;
+				color: var(--body-text);
+			}
+
+			.project-releases { padding: 8px 0; }
+
+			.release {
+				padding: 8px 16px 8px 24px;
+				border-bottom: 1px solid var(--border);
+			}
+
+			.release:last-child { border-bottom: none; }
+
+			.flex-row {
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+				gap: 12px;
+			}
+
+			.release-title-tag {
+				font-family: 'Lato', sans-serif;
+				font-size: 14px;
+				font-weight: 700;
+				color: var(--body-text);
+				min-width: 160px;
+			}
+
+			.btn {
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				height: 30px;
+				padding: 0 12px;
+				font-family: 'Lato', sans-serif;
+				font-size: 12px;
+				font-weight: 700;
+				border-radius: var(--border-radius);
+				border: 1px solid transparent;
+				cursor: pointer;
+				transition: background-color 0.1s ease, color 0.1s ease, border-color 0.1s ease;
+				white-space: nowrap;
+			}
+
+			.btn-primary {
+				background-color: var(--primary);
+				color: var(--primary-text);
+				border-color: var(--primary);
+			}
+
+			.btn-primary:hover {
+				background-color: var(--primary-hover);
+				border-color: var(--primary-hover);
+			}
+
+			.btn-secondary {
+				background-color: var(--body-bg);
+				color: var(--primary);
+				border-color: var(--primary);
+			}
+
+			.btn-secondary:hover {
+				background-color: var(--box-bg);
+			}
+
+			.files {
+				padding: 8px 0 4px 16px;
+			}
+
+			.files ul {
+				margin: 4px 0;
+				padding-left: 16px;
+				list-style: disc;
+			}
+
+			.files li {
+				margin: 3px 0;
+				font-size: 13px;
+				color: var(--muted);
+				word-break: break-all;
+			}
+
+			.files li a {
+				color: var(--link);
+			}
+
+			.hidden { display: none; }
+
+			.anchor {
+				opacity: 0;
+				margin-right: 6px;
+				text-decoration: none;
+				color: var(--muted);
+				font-size: 16px;
+				line-height: 1;
+			}
+
+			.flex-row:hover .anchor,
+			.project-header:hover .anchor,
+			.anchor:focus { opacity: 1; }
 		</style>
 	</head>
 	<body>
 		<header>
-			<img src="https://prime.ribs.rancher.io/assets/img/rancher-suse-logo-horizontal-color.svg" alt="rancher logo" id="rancher-logo" />
-			<h1>PRIME ARTIFACTS</h1>
+			<img src="https://prime.ribs.rancher.io/assets/img/rancher-suse-logo-horizontal-color.svg" alt="Rancher logo" id="rancher-logo" />
+			<h1>Prime Artifacts</h1>
 		</header>
 		<main>
 			<div class="project-rancher project">
-				<div class="flex-row">
-					<h2 id="rancher" class="project-title"><a class="anchor" href="#rancher">#</a>rancher</h2>
-					<button onclick="toggleProject('rancher')" id="project-rancher-expand" class="release-title-expand expand-active">hide</button>
+				<div class="project-header">
+					<a class="anchor" href="#rancher">#</a>
+					<h2 id="rancher">rancher</h2>
+					<button onclick="toggleProject('rancher')" id="project-rancher-expand" class="btn btn-secondary">hide</button>
 				</div>
-				<div id="project-rancher-releases">
+				<div id="project-rancher-releases" class="project-releases">
 					{{ range $i, $version := .Rancher.Versions }}
-					<div id="rancher-{{ $version }}" class="release-{{ $version }} release">
+					<div id="rancher-{{ $version }}" class="release">
 						<div class="flex-row">
 							<a class="anchor" href="#rancher-{{ $version }}">#</a>
 							<b class="release-title-tag">{{ $version }}</b>
-							<button onclick="toggleFiles('{{ $version }}')" id="release-{{ $version }}-expand" class="release-title-expand">show</button>
+							<button onclick="toggleFiles('{{ $version }}')" id="release-{{ $version }}-expand" class="btn btn-primary">show</button>
 						</div>
-						<div class="files" id="release-{{ $version }}-files">
+						<div class="files hidden" id="release-{{ $version }}-files">
 							<ul>{{ range index $.Rancher.VersionsFiles $version }}
 							<li><a href="{{ $.BaseURL }}/rancher/{{ $version | urlquery }}/{{ . }}">{{ $.BaseURL }}/rancher/{{ $version }}/{{ . }}</a></li>
 							{{ end }}</ul>
@@ -321,19 +492,20 @@ const artifactsIndexTemplate = `{{ define "release-artifacts-index" }}
 				</div>
 			</div>
 			<div class="project-rke2 project">
-				<div class="flex-row">
-					<h2 id="rke2" class="project-title"><a class="anchor" href="#rke2">#</a>rke2</h2>
-					<button onclick="toggleProject('rke2')" id="project-rke2-expand" class="release-title-expand expand-active">hide</button>
+				<div class="project-header">
+					<a class="anchor" href="#rke2">#</a>
+					<h2 id="rke2">rke2</h2>
+					<button onclick="toggleProject('rke2')" id="project-rke2-expand" class="btn btn-secondary">hide</button>
 				</div>
-				<div id="project-rke2-releases">
+				<div id="project-rke2-releases" class="project-releases">
 					{{ range $i, $version := .RKE2.Versions }}
-					<div id="rke2-{{ $version }}" class="release-{{ $version }} release">
+					<div id="rke2-{{ $version }}" class="release">
 						<div class="flex-row">
 							<a class="anchor" href="#rke2-{{ $version }}">#</a>
 							<b class="release-title-tag">{{ $version }}</b>
-							<button onclick="toggleFiles('{{ $version }}')" id="release-{{ $version }}-expand" class="release-title-expand">show</button>
+							<button onclick="toggleFiles('{{ $version }}')" id="release-{{ $version }}-expand" class="btn btn-primary">show</button>
 						</div>
-						<div class="files" id="release-{{ $version }}-files">
+						<div class="files hidden" id="release-{{ $version }}-files">
 							<ul>
 							{{ range index $.RKE2.VersionsFiles $version }}
 							<li><a href="{{ $.BaseURL }}/rke2/{{ $version | urlquery }}/{{ . }}">{{ $.BaseURL }}/rke2/{{ $version }}/{{ . }}</a></li>
@@ -345,19 +517,20 @@ const artifactsIndexTemplate = `{{ define "release-artifacts-index" }}
 				</div>
 			</div>
 			<div class="project-k3s project">
-				<div class="flex-row">
-					<h2 id="k3s" class="project-title"><a class="anchor" href="#k3s">#</a>k3s</h2>
-					<button onclick="toggleProject('k3s')" id="project-k3s-expand" class="release-title-expand expand-active">hide</button>
+				<div class="project-header">
+					<a class="anchor" href="#k3s">#</a>
+					<h2 id="k3s">k3s</h2>
+					<button onclick="toggleProject('k3s')" id="project-k3s-expand" class="btn btn-secondary">hide</button>
 				</div>
-				<div id="project-k3s-releases">
+				<div id="project-k3s-releases" class="project-releases">
 					{{ range $i, $version := .K3s.Versions }}
-					<div id="k3s-{{ $version }}" class="release-{{ $version }} release">
+					<div id="k3s-{{ $version }}" class="release">
 						<div class="flex-row">
 							<a class="anchor" href="#k3s-{{ $version }}">#</a>
 							<b class="release-title-tag">{{ $version }}</b>
-							<button onclick="toggleFiles('{{ $version }}')" id="release-{{ $version }}-expand" class="release-title-expand">show</button>
+							<button onclick="toggleFiles('{{ $version }}')" id="release-{{ $version }}-expand" class="btn btn-primary">show</button>
 						</div>
-						<div class="files" id="release-{{ $version }}-files">
+						<div class="files hidden" id="release-{{ $version }}-files">
 							<ul>
 							{{ range index $.K3s.VersionsFiles $version }}
 							<li><a href="{{ $.BaseURL }}/k3s/{{ $version | urlquery }}/{{ . }}">{{ $.BaseURL }}/k3s/{{ $version }}/{{ . }}</a></li>
@@ -370,7 +543,6 @@ const artifactsIndexTemplate = `{{ define "release-artifacts-index" }}
 			</div>
 		</main>
 		<script>
-		hideFiles()
 		function toggleProject(project) {
 			const projectId = "project-" + project + "-releases"
 			const expandButtonId = "project-" + project + "-expand"
@@ -384,14 +556,12 @@ const artifactsIndexTemplate = `{{ define "release-artifacts-index" }}
 		function toggleSection(sectionId, buttonId) {
 			const button = document.getElementById(buttonId)
 			document.getElementById(sectionId).classList.toggle("hidden")
-			button.classList.toggle("expand-active")
-
-			button.innerText == "hide" ? button.innerText = "show" : button.innerText = "hide"
-		}
-		function hideFiles() {
-			const files = document.getElementsByClassName('files')
-			for (let i = 0; i < files.length; i++) {
-			files[i].classList.add('hidden')
+			if (button.innerText === "hide") {
+				button.innerText = "show"
+				button.classList.replace("btn-secondary", "btn-primary")
+			} else {
+				button.innerText = "hide"
+				button.classList.replace("btn-primary", "btn-secondary")
 			}
 		}
 		</script>
