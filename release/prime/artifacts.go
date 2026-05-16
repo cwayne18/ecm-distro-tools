@@ -280,18 +280,21 @@ const artifactsIndexTemplate = `{{ define "release-artifacts-index" }}
 		<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
 		<style>
 			:root {
-				--primary:       #2F68DF;
-				--primary-hover: #1F58CF;
-				--primary-text:  #FFFFFF;
-				--body-bg:       #FFFFFF;
-				--body-text:     #141419;
-				--muted:         #6C6C76;
-				--border:        #DCDEE7;
-				--box-bg:        #F4F5FA;
-				--link:          #3458A8;
-				--header-height: 55px;
-				--border-radius: 4px;
-				--max-width:     1440px;
+				--primary:        #2F68DF;
+				--primary-hover:  #1F58CF;
+				--primary-focus:  rgba(47, 104, 223, 0.15);
+				--primary-text:   #FFFFFF;
+				--body-bg:        #FFFFFF;
+				--body-text:      #141419;
+				--muted:          #6C6C76;
+				--border:         #DCDEE7;
+				--box-bg:         #F4F5FA;
+				--link:           #3458A8;
+				--header-height:  55px;
+				--border-radius:  4px;
+				--max-width:      1440px;
+				/* search icon: magnifying glass (stroke #6C6C76, matches --muted) */
+				--search-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236C6C76' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
 			}
 
 			*, *::before, *::after { box-sizing: border-box; }
@@ -486,7 +489,7 @@ const artifactsIndexTemplate = `{{ define "release-artifacts-index" }}
 				background-color: var(--body-bg);
 				border: 1px solid var(--border);
 				border-radius: var(--border-radius);
-				background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236C6C76' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+				background-image: var(--search-icon);
 				background-repeat: no-repeat;
 				background-position: 10px center;
 				outline: none;
@@ -495,7 +498,7 @@ const artifactsIndexTemplate = `{{ define "release-artifacts-index" }}
 
 			.search-input:focus {
 				border-color: var(--primary);
-				box-shadow: 0 0 0 2px rgba(47,104,223,0.15);
+				box-shadow: 0 0 0 2px var(--primary-focus);
 			}
 
 			.badge {
@@ -640,7 +643,7 @@ const artifactsIndexTemplate = `{{ define "release-artifacts-index" }}
 				let visibleCount = 0
 				project.querySelectorAll('.release').forEach(function(release) {
 					const tag = release.querySelector('.release-title-tag')
-					const match = !q || (tag && tag.textContent.toLowerCase().includes(q))
+					const match = !q || (tag && tag.textContent.trim().toLowerCase().includes(q))
 					release.style.display = match ? '' : 'none'
 					if (match) visibleCount++
 				})
@@ -661,7 +664,7 @@ const artifactsIndexTemplate = `{{ define "release-artifacts-index" }}
 				btnEl.classList.replace('btn-primary', 'btn-secondary')
 				setTimeout(function() {
 					releaseEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
-				}, 100)
+				}, 100) // small delay lets the browser paint the expanded content before scrolling
 			}
 		})
 		</script>
