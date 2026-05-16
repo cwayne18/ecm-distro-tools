@@ -321,6 +321,10 @@ const artifactsIndexTemplate = `{{ define "release-artifacts-index" }}
 				background-color: var(--body-bg);
 				border-bottom: 1px solid var(--border);
 				gap: 16px;
+				position: sticky;
+				top: 0;
+				z-index: 100;
+				box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 			}
 
 			#rancher-logo { width: 180px; }
@@ -461,6 +465,60 @@ const artifactsIndexTemplate = `{{ define "release-artifacts-index" }}
 			.flex-row:hover .anchor,
 			.project-header:hover .anchor,
 			.anchor:focus { opacity: 1; }
+
+			.btn:focus-visible {
+				outline: 2px solid var(--primary);
+				outline-offset: 2px;
+			}
+
+			.search-wrapper {
+				margin-bottom: 24px;
+			}
+
+			.search-input {
+				width: 100%;
+				max-width: 400px;
+				height: 34px;
+				padding: 0 12px 0 36px;
+				font-family: 'Lato', sans-serif;
+				font-size: 14px;
+				color: var(--body-text);
+				background-color: var(--body-bg);
+				border: 1px solid var(--border);
+				border-radius: var(--border-radius);
+				background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236C6C76' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+				background-repeat: no-repeat;
+				background-position: 10px center;
+				outline: none;
+				transition: border-color 0.1s ease, box-shadow 0.1s ease;
+			}
+
+			.search-input:focus {
+				border-color: var(--primary);
+				box-shadow: 0 0 0 2px rgba(47,104,223,0.15);
+			}
+
+			.badge {
+				display: inline-flex;
+				align-items: center;
+				height: 20px;
+				padding: 0 8px;
+				font-size: 11px;
+				font-weight: 700;
+				color: var(--muted);
+				background-color: var(--box-bg);
+				border: 1px solid var(--border);
+				border-radius: 10px;
+				white-space: nowrap;
+			}
+
+			.no-results {
+				padding: 16px 24px;
+				color: var(--muted);
+				font-size: 13px;
+				font-style: italic;
+				display: none;
+			}
 		</style>
 	</head>
 	<body>
@@ -469,6 +527,12 @@ const artifactsIndexTemplate = `{{ define "release-artifacts-index" }}
 			<h1>Prime Artifacts</h1>
 		</header>
 		<main>
+			<div class="search-wrapper">
+				<input type="search" id="version-search" class="search-input"
+					placeholder="Filter versions…"
+					oninput="filterVersions(this.value)"
+					autocomplete="off" />
+			</div>
 			<div class="project-rancher project">
 				<div class="project-header">
 					<a class="anchor" href="#rancher">#</a>
@@ -476,11 +540,13 @@ const artifactsIndexTemplate = `{{ define "release-artifacts-index" }}
 					<button onclick="toggleProject('rancher')" id="project-rancher-expand" class="btn btn-secondary">hide</button>
 				</div>
 				<div id="project-rancher-releases" class="project-releases">
+					<p class="no-results">No versions match your filter.</p>
 					{{ range $i, $version := .Rancher.Versions }}
 					<div id="rancher-{{ $version }}" class="release">
 						<div class="flex-row">
 							<a class="anchor" href="#rancher-{{ $version }}">#</a>
 							<b class="release-title-tag">{{ $version }}</b>
+							<span class="badge">{{ len (index $.Rancher.VersionsFiles $version) }} files</span>
 							<button onclick="toggleFiles('{{ $version }}')" id="release-{{ $version }}-expand" class="btn btn-primary">show</button>
 						</div>
 						<div class="files hidden" id="release-{{ $version }}-files">
@@ -498,11 +564,13 @@ const artifactsIndexTemplate = `{{ define "release-artifacts-index" }}
 					<button onclick="toggleProject('rke2')" id="project-rke2-expand" class="btn btn-secondary">hide</button>
 				</div>
 				<div id="project-rke2-releases" class="project-releases">
+					<p class="no-results">No versions match your filter.</p>
 					{{ range $i, $version := .RKE2.Versions }}
 					<div id="rke2-{{ $version }}" class="release">
 						<div class="flex-row">
 							<a class="anchor" href="#rke2-{{ $version }}">#</a>
 							<b class="release-title-tag">{{ $version }}</b>
+							<span class="badge">{{ len (index $.RKE2.VersionsFiles $version) }} files</span>
 							<button onclick="toggleFiles('{{ $version }}')" id="release-{{ $version }}-expand" class="btn btn-primary">show</button>
 						</div>
 						<div class="files hidden" id="release-{{ $version }}-files">
@@ -523,11 +591,13 @@ const artifactsIndexTemplate = `{{ define "release-artifacts-index" }}
 					<button onclick="toggleProject('k3s')" id="project-k3s-expand" class="btn btn-secondary">hide</button>
 				</div>
 				<div id="project-k3s-releases" class="project-releases">
+					<p class="no-results">No versions match your filter.</p>
 					{{ range $i, $version := .K3s.Versions }}
 					<div id="k3s-{{ $version }}" class="release">
 						<div class="flex-row">
 							<a class="anchor" href="#k3s-{{ $version }}">#</a>
 							<b class="release-title-tag">{{ $version }}</b>
+							<span class="badge">{{ len (index $.K3s.VersionsFiles $version) }} files</span>
 							<button onclick="toggleFiles('{{ $version }}')" id="release-{{ $version }}-expand" class="btn btn-primary">show</button>
 						</div>
 						<div class="files hidden" id="release-{{ $version }}-files">
@@ -564,6 +634,36 @@ const artifactsIndexTemplate = `{{ define "release-artifacts-index" }}
 				button.classList.replace("btn-primary", "btn-secondary")
 			}
 		}
+		function filterVersions(query) {
+			const q = query.trim().toLowerCase()
+			document.querySelectorAll('.project').forEach(function(project) {
+				let visibleCount = 0
+				project.querySelectorAll('.release').forEach(function(release) {
+					const tag = release.querySelector('.release-title-tag')
+					const match = !q || (tag && tag.textContent.toLowerCase().includes(q))
+					release.style.display = match ? '' : 'none'
+					if (match) visibleCount++
+				})
+				const noResults = project.querySelector('.no-results')
+				if (noResults) noResults.style.display = visibleCount === 0 ? '' : 'none'
+			})
+		}
+		document.addEventListener('DOMContentLoaded', function() {
+			const hash = window.location.hash.slice(1)
+			if (!hash) return
+			const releaseEl = document.getElementById(hash)
+			if (!releaseEl || !releaseEl.classList.contains('release')) return
+			const filesEl = releaseEl.querySelector('.files')
+			const btnEl = releaseEl.querySelector('.btn')
+			if (filesEl && btnEl) {
+				filesEl.classList.remove('hidden')
+				btnEl.innerText = 'hide'
+				btnEl.classList.replace('btn-primary', 'btn-secondary')
+				setTimeout(function() {
+					releaseEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+				}, 100)
+			}
+		})
 		</script>
 	</body>
 </html>
