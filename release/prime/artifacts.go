@@ -19,6 +19,7 @@ const (
 	rke2ArtifactsPrefix     = "rke2/v"
 	k3sArtifactsPrefix      = "k3s/v"
 	rancherArtifactsBaseURL = "https://prime.ribs.rancher.io"
+	scansBaseURL            = "https://scans.rancher.com"
 )
 
 type ArtifactsIndexContent struct {
@@ -32,10 +33,11 @@ type ArtifactsIndexVersions struct {
 }
 
 type ArtifactsIndexContentGroup struct {
-	Rancher ArtifactsIndexVersions
-	RKE2    ArtifactsIndexVersions
-	K3s     ArtifactsIndexVersions
-	BaseURL string
+	Rancher      ArtifactsIndexVersions
+	RKE2         ArtifactsIndexVersions
+	K3s          ArtifactsIndexVersions
+	BaseURL      string
+	ScansBaseURL string
 }
 
 type ArtifactLister interface {
@@ -147,7 +149,8 @@ func generateArtifactsIndexContent(rancherKeys, rke2Keys, k3sKeys []string, igno
 				Versions:      []string{},
 				VersionsFiles: map[string][]string{},
 			},
-			BaseURL: rancherArtifactsBaseURL,
+			BaseURL:      rancherArtifactsBaseURL,
+			ScansBaseURL: scansBaseURL,
 		},
 		PreRelease: ArtifactsIndexContentGroup{
 			Rancher: ArtifactsIndexVersions{
@@ -162,7 +165,8 @@ func generateArtifactsIndexContent(rancherKeys, rke2Keys, k3sKeys []string, igno
 				Versions:      []string{},
 				VersionsFiles: map[string][]string{},
 			},
-			BaseURL: rancherArtifactsBaseURL,
+			BaseURL:      rancherArtifactsBaseURL,
+			ScansBaseURL: scansBaseURL,
 		},
 	}
 
@@ -227,8 +231,20 @@ func parseVersionsFromKeys(keys []string, prefix string, ignoreVersions map[stri
 	return gaVersions, preReleaseVersions
 }
 
+// stripBuildMeta removes semver build metadata (the "+..." suffix) from a version string.
+// For example, "v1.30.1+rke2r1" becomes "v1.30.1".
+func stripBuildMeta(version string) string {
+	if i := strings.IndexByte(version, '+'); i >= 0 {
+		return version[:i]
+	}
+	return version
+}
+
 func generateArtifactsHTML(content ArtifactsIndexContentGroup) ([]byte, error) {
-	tmpl, err := template.New("release-artifacts-index").Parse(artifactsIndexTemplate)
+	funcMap := template.FuncMap{
+		"stripBuildMeta": stripBuildMeta,
+	}
+	tmpl, err := template.New("release-artifacts-index").Funcs(funcMap).Parse(artifactsIndexTemplate)
 	if err != nil {
 		return nil, err
 	}
@@ -522,6 +538,29 @@ const artifactsIndexTemplate = `{{ define "release-artifacts-index" }}
 				font-style: italic;
 				display: none;
 			}
+
+			.scan-link {
+				display: inline-flex;
+				align-items: center;
+				gap: 4px;
+				height: 30px;
+				padding: 0 10px;
+				font-family: 'Lato', sans-serif;
+				font-size: 12px;
+				font-weight: 700;
+				color: var(--muted);
+				border: 1px solid var(--border);
+				border-radius: var(--border-radius);
+				text-decoration: none;
+				transition: color 0.1s ease, border-color 0.1s ease;
+				white-space: nowrap;
+			}
+
+			.scan-link:hover {
+				color: var(--primary);
+				border-color: var(--primary);
+				text-decoration: none;
+			}
 		</style>
 	</head>
 	<body>
@@ -550,6 +589,7 @@ const artifactsIndexTemplate = `{{ define "release-artifacts-index" }}
 							<a class="anchor" href="#rancher-{{ $version }}">#</a>
 							<b class="release-title-tag">{{ $version }}</b>
 							<span class="badge">{{ len (index $.Rancher.VersionsFiles $version) }} files</span>
+							<a class="scan-link" href="{{ $.ScansBaseURL }}/rancher-{{ $version | stripBuildMeta }}.html" target="_blank" rel="noopener">CVE scan ↗</a>
 							<button onclick="toggleFiles('{{ $version }}')" id="release-{{ $version }}-expand" class="btn btn-primary">show</button>
 						</div>
 						<div class="files hidden" id="release-{{ $version }}-files">
@@ -574,6 +614,7 @@ const artifactsIndexTemplate = `{{ define "release-artifacts-index" }}
 							<a class="anchor" href="#rke2-{{ $version }}">#</a>
 							<b class="release-title-tag">{{ $version }}</b>
 							<span class="badge">{{ len (index $.RKE2.VersionsFiles $version) }} files</span>
+							<a class="scan-link" href="{{ $.ScansBaseURL }}/rke2-{{ $version | stripBuildMeta }}.html" target="_blank" rel="noopener">CVE scan ↗</a>
 							<button onclick="toggleFiles('{{ $version }}')" id="release-{{ $version }}-expand" class="btn btn-primary">show</button>
 						</div>
 						<div class="files hidden" id="release-{{ $version }}-files">
@@ -601,6 +642,7 @@ const artifactsIndexTemplate = `{{ define "release-artifacts-index" }}
 							<a class="anchor" href="#k3s-{{ $version }}">#</a>
 							<b class="release-title-tag">{{ $version }}</b>
 							<span class="badge">{{ len (index $.K3s.VersionsFiles $version) }} files</span>
+							<a class="scan-link" href="{{ $.ScansBaseURL }}/k3s-{{ $version | stripBuildMeta }}.html" target="_blank" rel="noopener">CVE scan ↗</a>
 							<button onclick="toggleFiles('{{ $version }}')" id="release-{{ $version }}-expand" class="btn btn-primary">show</button>
 						</div>
 						<div class="files hidden" id="release-{{ $version }}-files">
